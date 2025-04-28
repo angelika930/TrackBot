@@ -11,12 +11,12 @@ class motor:
 
       #pinout for right motor controller
       #EN = enable left or right
-      self.R_EN = 29
-      self.R_PWM = 33
+      self.R_EN = 16
+      self.R_PWM = 5
 
       #pinout for left motor controller
-      self.L_EN = 31
-      self.L_PWM = 32
+      self.L_EN = 19
+      self.L_PWM = 13
       
       #check in case pin numbers wrong
       GPIO.setup(self.R_EN, GPIO.OUT)
