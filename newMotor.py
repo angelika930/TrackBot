@@ -2,6 +2,7 @@ import gpiod
 import time
 import threading
 import atexit
+import sys
 
 class MotorController:
     def __init__(self):
@@ -31,34 +32,59 @@ class MotorController:
         self.motor2_reverse_duty = 0
         
         # Initialize gpiod
-        self.chip = gpiod.chip("gpiochip0")  # The main GPIO chip on Raspberry Pi
-        self.lines = {}  # Dictionary to store configured GPIO lines
-        
-        # Configure all GPIO pins
-        self._setup_gpio()
-        
-        # PWM threads
-        self.pwm_threads = []
-        self.pwm_running = True
-        
-        # Set up clean exit
-        atexit.register(self.cleanup)
+        try:
+            self.chip = gpiod.Chip('gpiochip0')
+            self.lines = {}  # Dictionary to store configured GPIO lines
+            
+            # Configure all GPIO pins
+            self._setup_gpio()
+            
+            # PWM threads
+            self.pwm_threads = []
+            self.pwm_running = True
+            
+            # Set up clean exit
+            atexit.register(self.cleanup)
+            
+        except Exception as e:
+            print(f"Error initializing GPIO: {e}")
+            print("\nIf it's a permission error, make sure you're running with sudo.")
+            print("If it's an API error, you may need to check your gpiod version.")
+            sys.exit(1)
     
     def _setup_gpio(self):
         """Configure all GPIO pins using gpiod"""
         for pin in self.all_pins:
-            # Request line for output
-            line = self.chip.get_line(pin)
-            config = gpiod.line_request()
-            config.consumer = "MotorControl"
-            config.request_type = gpiod.line_request.DIRECTION_OUTPUT
-            line.request(config)
-            
-            # Store the configured line in our dictionary
-            self.lines[pin] = line
-            
-            # Initialize to LOW (0)
-            line.set_value(0)
+            try:
+                # Request line for output - using the updated API
+                line = self.chip.get_line(pin)
+                
+                # The API for setting up lines varies between gpiod versions
+                # Try different API approaches
+                try:
+                    # Newer API style
+                    line.request(consumer="MotorControl", type=gpiod.LINE_REQ_DIR_OUT)
+                except AttributeError:
+                    try:
+                        # Alternative API style
+                        line.request(consumer="MotorControl", direction=gpiod.Line.DIRECTION_OUTPUT)
+                    except AttributeError:
+                        # Fallback for very new API
+                        config = gpiod.LineRequest()
+                        config.consumer = "MotorControl"
+                        config.request_type = gpiod.LineRequest.DIRECTION_OUTPUT
+                        line.request(config)
+                
+                # Store the configured line in our dictionary
+                self.lines[pin] = line
+                
+                # Initialize to LOW (0)
+                line.set_value(0)
+                
+            except Exception as e:
+                print(f"Error setting up GPIO pin {pin}: {e}")
+                print("This could be due to an incompatible gpiod version.")
+                raise
     
     def _pwm_thread(self, pin, duty_cycle_ref):
         """Thread function to generate PWM signal on a pin"""
@@ -152,14 +178,92 @@ class MotorController:
         print("Cleanup complete")
 
 
-if __name__ == "__main__":
-    motor_controller = MotorController()
+# Alternative simpler implementation using RPi.GPIO
+def run_with_rpi_gpio():
+    """
+    Fallback function that uses RPi.GPIO instead of gpiod
+    This is a simpler implementation that might be more reliable
+    """
+    import RPi.GPIO as GPIO
+    
+    # Set up GPIO mode
+    GPIO.setmode(GPIO.BCM)
+    
+    # Motor 1 Pin Definitions
+    motor1_rpwm = 12  # GPIO pin connected to RPWM of motor controller 1
+    motor1_lpwm = 13  # GPIO pin connected to LPWM of motor controller 1
+    motor1_ren = 5    # GPIO pin connected to R_EN of motor controller 1
+    motor1_len = 6    # GPIO pin connected to L_EN of motor controller 1
+
+    # Motor 2 Pin Definitions
+    motor2_rpwm = 16  # GPIO pin connected to RPWM of motor controller 2
+    motor2_lpwm = 20  # GPIO pin connected to LPWM of motor controller 2
+    motor2_ren = 21   # GPIO pin connected to R_EN of motor controller 2
+    motor2_len = 26   # GPIO pin connected to L_EN of motor controller 2
+    
+    # Set up all pins as outputs
+    for pin in [motor1_rpwm, motor1_lpwm, motor1_ren, motor1_len,
+               motor2_rpwm, motor2_lpwm, motor2_ren, motor2_len]:
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, GPIO.LOW)
+    
+    # Create PWM objects for speed control
+    # Frequency of 500 Hz works well for DC motors
+    motor1_forward_pwm = GPIO.PWM(motor1_rpwm, 500)
+    motor1_reverse_pwm = GPIO.PWM(motor1_lpwm, 500)
+    motor2_forward_pwm = GPIO.PWM(motor2_rpwm, 500)
+    motor2_reverse_pwm = GPIO.PWM(motor2_lpwm, 500)
+    
+    # Start all PWM with 0% duty cycle (motors stopped)
+    motor1_forward_pwm.start(0)
+    motor1_reverse_pwm.start(0)
+    motor2_forward_pwm.start(0)
+    motor2_reverse_pwm.start(0)
     
     try:
-        # Start PWM generation
-        motor_controller.start_pwm()
+        # Enable forward direction on both motors
+        GPIO.output(motor1_ren, GPIO.HIGH)
+        GPIO.output(motor1_len, GPIO.LOW)
+        GPIO.output(motor2_ren, GPIO.HIGH)
+        GPIO.output(motor2_len, GPIO.LOW)
         
-        # Drive motors forward continuously
+        # Set forward PWM duty cycle for both motors (70%)
+        motor1_forward_pwm.ChangeDutyCycle(70)
+        motor2_forward_pwm.ChangeDutyCycle(70)
+        
+        print("Motors running forward at 70% speed")
+        print("Press CTRL+C to stop motors")
+        
+        # Keep the program running
+        while True:
+            time.sleep(0.1)
+            
+    except KeyboardInterrupt:
+        # Handle Ctrl+C gracefully
+        print("Stopping motors")
+        motor1_forward_pwm.ChangeDutyCycle(0)
+        motor1_reverse_pwm.ChangeDutyCycle(0)
+        motor2_forward_pwm.ChangeDutyCycle(0)
+        motor2_reverse_pwm.ChangeDutyCycle(0)
+        
+        # Disable both directions on both motors
+        GPIO.output(motor1_ren, GPIO.LOW)
+        GPIO.output(motor1_len, GPIO.LOW)
+        GPIO.output(motor2_ren, GPIO.LOW)
+        GPIO.output(motor2_len, GPIO.LOW)
+        
+    finally:
+        # Clean up
+        GPIO.cleanup()
+        print("GPIO cleaned up")
+
+
+if __name__ == "__main__":
+    try:
+        # Try the gpiod implementation first
+        print("Attempting to use gpiod library...")
+        motor_controller = MotorController()
+        motor_controller.start_pwm()
         motor_controller.forward(70, 70)
         
         # Keep the program running
@@ -167,6 +271,13 @@ if __name__ == "__main__":
         while True:
             time.sleep(0.1)
             
+    except Exception as e:
+        # If gpiod fails, fall back to RPi.GPIO
+        print(f"Error with gpiod: {e}")
+        print("Falling back to RPi.GPIO implementation...")
+        run_with_rpi_gpio()
+    
     except KeyboardInterrupt:
         # Handle Ctrl+C gracefully
-        motor_controller.stop()
+        if 'motor_controller' in locals():
+            motor_controller.stop()
