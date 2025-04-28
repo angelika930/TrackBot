@@ -9,14 +9,14 @@ class MotorController:
         # Motor 1 Pin Definitions
         self.motor1_rpwm_pin = 12  # RPWM pin for motor controller 1
         self.motor1_lpwm_pin = 13  # LPWM pin for motor controller 1
-        self.motor1_ren_pin = 5    # R_EN pin for motor controller 1
-        self.motor1_len_pin = 6    # L_EN pin for motor controller 1
+        self.motor1_ren_pin = 18    # R_EN pin for motor controller 1
+        self.motor1_len_pin = 19    # L_EN pin for motor controller 1
 
         # Motor 2 Pin Definitions
-        self.motor2_rpwm_pin = 16  # RPWM pin for motor controller 2
-        self.motor2_lpwm_pin = 20  # LPWM pin for motor controller 2
-        self.motor2_ren_pin = 21   # R_EN pin for motor controller 2
-        self.motor2_len_pin = 26   # L_EN pin for motor controller 2
+        self.motor2_rpwm_pin = 5  # RPWM pin for motor controller 2
+        self.motor2_lpwm_pin = 6  # LPWM pin for motor controller 2
+        self.motor2_ren_pin = 16   # R_EN pin for motor controller 2
+        self.motor2_len_pin = 20   # L_EN pin for motor controller 2
 
         # All motor pins in one list for easy setup
         self.all_pins = [
@@ -192,14 +192,14 @@ def run_with_rpi_gpio():
     # Motor 1 Pin Definitions
     motor1_rpwm = 12  # GPIO pin connected to RPWM of motor controller 1
     motor1_lpwm = 13  # GPIO pin connected to LPWM of motor controller 1
-    motor1_ren = 5    # GPIO pin connected to R_EN of motor controller 1
-    motor1_len = 6    # GPIO pin connected to L_EN of motor controller 1
+    motor1_ren = 18    # GPIO pin connected to R_EN of motor controller 1
+    motor1_len = 19    # GPIO pin connected to L_EN of motor controller 1
 
     # Motor 2 Pin Definitions
-    motor2_rpwm = 16  # GPIO pin connected to RPWM of motor controller 2
-    motor2_lpwm = 20  # GPIO pin connected to LPWM of motor controller 2
-    motor2_ren = 21   # GPIO pin connected to R_EN of motor controller 2
-    motor2_len = 26   # GPIO pin connected to L_EN of motor controller 2
+    motor2_rpwm = 5  # GPIO pin connected to RPWM of motor controller 2
+    motor2_lpwm = 6  # GPIO pin connected to LPWM of motor controller 2
+    motor2_ren = 16   # GPIO pin connected to R_EN of motor controller 2
+    motor2_len = 20   # GPIO pin connected to L_EN of motor controller 2
     
     # Set up all pins as outputs
     for pin in [motor1_rpwm, motor1_lpwm, motor1_ren, motor1_len,
