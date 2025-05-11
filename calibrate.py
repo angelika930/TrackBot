@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 
-KNOWN_DISTANCE = 232.41   # cm from camera to object during calibration
-KNOWN_WIDTH = 40.64   # cm (width of the object, e.g., credit card)
+KNOWN_DISTANCE = 38.1   # cm from camera to object during calibration
+KNOWN_WIDTH = 20.32   # cm (width of the object, e.g., credit card)
 
 def find_object_width(image):
     """
@@ -20,7 +20,7 @@ def find_object_width(image):
     rect = cv2.minAreaRect(largest)
     width = min(rect[1])  # Take the shorter side
     box = cv2.boxPoints(rect)
-    box = np.int0(box)
+    box = np.int64(box)
     cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
 
     return width, image
