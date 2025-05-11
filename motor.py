@@ -1,46 +1,33 @@
-import RPi.GPIO as GPIO
+from gpiozero import OutputDevice, PWMOutputDevice
+import time
 
-class motor:
-   def __init__(self):
-  
-      #use pin numbers on pi board
-      GPIO.setmode(GPIO.BOARD)
+#Motor 1 pins
+in1 = OutputDevice(17)
+in2 = OutputDevice(18)
+ena = PWMOutputDevice(22)
 
-      #alert us if pin is configured to something other than default
-      GPIO.setwarnings(False)
+#Motor 2 pins
+in3 = OutputDevice(23)
+in4 = OutputDevice(24)
+enb = PWMOutputDevice(25)
 
-      #pinout for right motor controller
-      #EN = enable left or right
-      self.R_EN = 16
-      self.R_PWM = 5
+def forward():
+   in1.on()
+   in2.off()
+   in3.on()
+   in4.off()
+   ena.value = 0.5
+   enb.value = 0.5
 
-      #pinout for left motor controller
-      self.L_EN = 19
-      self.L_PWM = 13
-      
-      #check in case pin numbers wrong
-      GPIO.setup(self.R_EN, GPIO.OUT)
-      GPIO.setup(self.R_PWM, GPIO.OUT)
-      GPIO.setup(self.L_EN, GPIO.OUT)
-      GPIO.setup(self.L_PWM, GPIO.OUT)
-      GPIO.output(self.R_EN, True)
-      GPIO.output(self.L_EN, True)
-
-      
-      def neutral(self):
-         GPIO.output(self.R_PWM, False)
-         GPIO.output(self.L_PWM, False)
-
-      def right(self):
-         GPIO.output(self.L_PWM, False)
-         GPIO.output(self.R_PWM, True)
-
-      def left(self):
-         GPIO.output(self.L_PWM, True)
-         GPIO.output(self.R_PWM, False)
-
-      def forward(self):
-         GPIO.output(self.L_PWM, True)
-         GPIO.output(self.R_PWM, True)
+def stop():
+   ena.value = 0.0
+   enb.value = 0.0
+   in1.off()
+   in2.off()
+   in3.off()
+   in4.off()
+   
 
 forward()
+sleep(5)
+stop()

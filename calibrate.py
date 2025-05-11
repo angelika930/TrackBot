@@ -26,7 +26,7 @@ def find_object_width(image):
     return width, image
 
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 
 print("Hold the known object at", KNOWN_DISTANCE, "cm and press 'c' to calibrate.")
 
