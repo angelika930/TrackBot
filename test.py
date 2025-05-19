@@ -2,12 +2,19 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
+from newMotor import Drive
 
+LOW_SPEED = 0.3
+AVG_SPEED = 0.5
+FAST_SPEED = 0.7
+
+#Create drive instance
+drive = Drive()
 # Load lightweight SSD Mobilenet v2 model (320x320) from TF Hub
 detector = hub.load("https://tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_320x320/1")
 
-FOCAL_LENGTH = 446.01
-AVERAGE_HEIGHT = 25
+FOCAL_LENGTH = 750
+AVERAGE_HEIGHT = 22
 
 
 def calculate_distance(known_height, focal_length, perceived_height):
@@ -36,8 +43,15 @@ while True:
     boxes = detections['detection_boxes'][0].numpy()
     classes = detections['detection_classes'][0].numpy().astype(np.int32)
     scores = detections['detection_scores'][0].numpy()
-
+    
     for i in range(len(scores)):
+
+        if classes[i] != 1:  #if no human detected, spin in circle
+            drive.left_l_enable.on()
+            drive.left_r_enable.on()
+            drive.left_reverse.off()
+            drive. left_forward.value = LOW_SPEED
+
         if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
             y_min, x_min, y_max, x_max = boxes[i]
             xA, yA = int(x_min * width), int(y_min * height)
@@ -53,6 +67,8 @@ while True:
                 distance = calculate_distance(AVERAGE_HEIGHT, FOCAL_LENGTH, perceived_height)
                 cv2.putText(frame, f"Distance: {distance:.2f} cm", (xA, yA - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+           
+                drive.forward(LOW_SPEED)
 
     # Show the resulting frame with detection and distance
     cv2.imshow("Detection and Distance", frame)
