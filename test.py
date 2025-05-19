@@ -23,7 +23,6 @@ def calculate_distance(known_height, focal_length, perceived_height):
 
 # Start webcam
 cap = cv2.VideoCapture(0)
-
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -34,7 +33,7 @@ while True:
     # Preprocess frame for the model
     resized_frame = cv2.resize(frame, (320, 320))  # Resize image to 320x320
     input_tensor = tf.convert_to_tensor([resized_frame], dtype=tf.uint8)  # Convert to uint8
-    input_tensor = tf.image.convert_image_dtype(input_tensor, tf.uint8)  # Normalize to [0, 1]
+    #input_tensor = tf.image.convert_image_dtype(input_tensor, tf.uint8)  # Normalize to [0, 1]
 
     # Run detection
     detections = detector(input_tensor)
@@ -47,11 +46,14 @@ while True:
     for i in range(len(scores)):
 
         if classes[i] != 1:  #if no human detected, spin in circle
+            print("Did not detect human\n")
+            drive.forward(0.2)
+            """
             drive.left_l_enable.on()
             drive.left_r_enable.on()
             drive.left_reverse.off()
-            drive. left_forward.value = LOW_SPEED
-
+            drive.left_forward.value = LOW_SPEED
+            """
         if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
             y_min, x_min, y_max, x_max = boxes[i]
             xA, yA = int(x_min * width), int(y_min * height)

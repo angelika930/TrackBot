@@ -35,18 +35,20 @@ class Drive:
         self.left_reverse = OutputDevice(LEFT_LPWM)
         self.right_reverse = OutputDevice(RIGHT_LPWM)
 
+        self.test = 13
+
     def forward(self, speed):
-        left_l_enable.on()
-        left_r_enable.on()
-        right_l_enable.on()
-        right_r_enable.on()
+        self.left_l_enable.on()
+        self.left_r_enable.on()
+        self.right_l_enable.on()
+        self.right_r_enable.on()
     
         # Ensure reverse pins are off
-        left_reverse.off()
-        right_reverse.off()
+        self.left_reverse.off()
+        self.right_reverse.off()
 
-        left_forward.value = speed
-        right_forward.value = speed
+        self.left_forward.value = speed
+        self.right_forward.value = speed
 
     # Function to stop motors and clean up
     def stop_motors(self):
