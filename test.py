@@ -46,14 +46,11 @@ while True:
     for i in range(len(scores)):
 
         if classes[i] != 1:  #if no human detected, spin in circle
-            print("Did not detect human\n")
-            drive.forward(0.2)
-            """
             drive.left_l_enable.on()
             drive.left_r_enable.on()
             drive.left_reverse.off()
             drive.left_forward.value = LOW_SPEED
-            """
+        
         if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
             y_min, x_min, y_max, x_max = boxes[i]
             xA, yA = int(x_min * width), int(y_min * height)
