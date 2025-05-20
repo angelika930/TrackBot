@@ -15,12 +15,20 @@ detector = hub.load("https://tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_320x3
 
 FOCAL_LENGTH = 750
 AVERAGE_HEIGHT = 22
-
+Kp = 0.2
 
 def calculate_distance(known_height, focal_length, perceived_height):
     return (known_height * focal_length) / perceived_height
 
+def follow(center, person_x):
+   center_x = center[0]
+   error = person_x - center_x
+   turn_factor = Kp * error
 
+   if (person_x <= center_x + 25) and (person_x > center_x - 25):
+      drive.forward(LOW_SPEED)
+   elif (person_x < center
+   
 # Start webcam
 cap = cv2.VideoCapture(0)
 while True:
@@ -29,7 +37,7 @@ while True:
         break
 
     height, width, _ = frame.shape
-
+    center = width//2
     # Preprocess frame for the model
     resized_frame = cv2.resize(frame, (320, 320))  # Resize image to 320x320
     input_tensor = tf.convert_to_tensor([resized_frame], dtype=tf.uint8)  # Convert to uint8
