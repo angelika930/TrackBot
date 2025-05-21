@@ -7,7 +7,10 @@ from newMotor import Drive
 LOW_SPEED = 0.3
 AVG_SPEED = 0.5
 FAST_SPEED = 0.7
-
+MAX_SPEED = 1.0
+MIN_SPEED = 0.0
+isMoving = True
+MAX_DISTANCE = 50
 #Create drive instance
 drive = Drive()
 # Load lightweight SSD Mobilenet v2 model (320x320) from TF Hub
@@ -20,15 +23,34 @@ Kp = 0.2
 def calculate_distance(known_height, focal_length, perceived_height):
     return (known_height * focal_length) / perceived_height
 
-def follow(center, person_x):
-   center_x = center[0]
-   error = person_x - center_x
+def follow(center, person, distance):
+   center_y = center[1]
+   error = person[1] - center_y
    turn_factor = Kp * error
-
-   if (person_x <= center_x + 25) and (person_x > center_x - 25):
-      drive.forward(LOW_SPEED)
-   elif (person_x < center
    
+   if (distance <= MAX_DISTANCE): #stop robot, keep human safe
+      drive.stop_motors()
+      isMoving = False
+
+   elif (person[1] <= center_y + 25) and (person[1] > center_y - 25): #drive forward if in middle of frame
+      drive.forward(LOW_SPEED)
+      isMoving = True
+  
+   elif (person[1] < center_y - 25): #if person is in the left side of the camera
+      speed = min(MAX_SPEED, max(MIN_SPEED, AVG_SPEED + turn_factor))
+      drive.left_forward.value = speed
+      speed = max(MIN_SPEED, min(MAX_SPEED, AVG_SPEED - turn_factor))
+      drive.right_forward.value = speed
+      isMoving = True
+
+   elif (person[1] > center_y + 25): #if person is in the right side of the camera
+      speed = max(MIN_SPEED, min(MAX_SPEED, AVG_SPEED - turn_factor))
+      drive.left_forward.value = speed
+      speed = min(MAX_SPEED, max(MIN_SPEED, AVG_SPEED + turn_factor))
+      drive.right_forward.value = speed
+      isMoving = True
+   
+
 # Start webcam
 cap = cv2.VideoCapture(0)
 while True:
@@ -38,6 +60,7 @@ while True:
 
     height, width, _ = frame.shape
     center = width//2
+   
     # Preprocess frame for the model
     resized_frame = cv2.resize(frame, (320, 320))  # Resize image to 320x320
     input_tensor = tf.convert_to_tensor([resized_frame], dtype=tf.uint8)  # Convert to uint8
@@ -54,10 +77,6 @@ while True:
     for i in range(len(scores)):
 
         if classes[i] != 1:  #if no human detected, spin in circle
-            drive.left_l_enable.on()
-            drive.left_r_enable.on()
-            drive.left_reverse.off()
-            drive.left_forward.value = LOW_SPEED
         
         if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
             y_min, x_min, y_max, x_max = boxes[i]
@@ -74,8 +93,14 @@ while True:
                 distance = calculate_distance(AVERAGE_HEIGHT, FOCAL_LENGTH, perceived_height)
                 cv2.putText(frame, f"Distance: {distance:.2f} cm", (xA, yA - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+               
+                #Drive logic: Stop if near human, spin to look for human, follow based on human's coords in frame
+                follow(center, (((xB-xA)//2), ((yB-yA)//2)))                
+                print("Person Center Coord: ", (((xB-xA)//2), ((yB-yA)//2)))
            
-                drive.forward(LOW_SPEED)
+                if (isMoving == False and distance >= MAX_DISTANCE):
+                  isMoving = True
+                  drive.circle_around()
 
     # Show the resulting frame with detection and distance
     cv2.imshow("Detection and Distance", frame)

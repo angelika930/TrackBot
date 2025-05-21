@@ -18,6 +18,12 @@ RIGHT_L_EN = 24   # BCM GPIO for physical pin 18
 RIGHT_RPWM = 25   # BCM GPIO for physical pin 22 (Forward PWM) 
 RIGHT_LPWM = 12   # BCM GPIO for physical pin 32 (Reverse PWM)
 
+LOW_SPEED = 0.3
+AVG_SPEED = 0.5
+FAST_SPEED = 0.7
+MAX_SPEED = 1.0
+MIN_SPEED = 0.0
+
 class Drive:
     def __init__(self):
         # Enable pins as simple digital outputs
@@ -68,6 +74,11 @@ class Drive:
         self.right_reverse.off()
         print("Motors stopped")
 
+   def circle_around(): #robot spins in a circle till it finds a human
+      drive.left_l_enable.on()
+      drive.left_r_enable.on()
+      drive.left_reverse.off()
+      drive.left_forward.value = LOW_SPEED
     
 """    
     # Main program
