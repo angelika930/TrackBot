@@ -74,11 +74,11 @@ class Drive:
         self.right_reverse.off()
         print("Motors stopped")
 
-   def circle_around(): #robot spins in a circle till it finds a human
-      drive.left_l_enable.on()
-      drive.left_r_enable.on()
-      drive.left_reverse.off()
-      drive.left_forward.value = LOW_SPEED
+    def circle_around(self): #robot spins in a circle till it finds a human
+      self.left_l_enable.on()
+      self.left_r_enable.on()
+      self.left_reverse.off()
+      self.left_forward.value = LOW_SPEED
     
 """    
     # Main program

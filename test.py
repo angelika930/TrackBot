@@ -24,6 +24,7 @@ def calculate_distance(known_height, focal_length, perceived_height):
     return (known_height * focal_length) / perceived_height
 
 def follow(center, person, distance):
+   print(center)
    center_y = center[1]
    error = person[1] - center_y
    turn_factor = Kp * error
@@ -32,21 +33,22 @@ def follow(center, person, distance):
       drive.stop_motors()
       isMoving = False
 
+
    elif (person[1] <= center_y + 25) and (person[1] > center_y - 25): #drive forward if in middle of frame
       drive.forward(LOW_SPEED)
       isMoving = True
   
    elif (person[1] < center_y - 25): #if person is in the left side of the camera
-      speed = min(MAX_SPEED, max(MIN_SPEED, AVG_SPEED + turn_factor))
-      drive.left_forward.value = speed
-      speed = max(MIN_SPEED, min(MAX_SPEED, AVG_SPEED - turn_factor))
+      speed = min(AVG_SPEED, max(MIN_SPEED, LOW_SPEED + turn_factor))
       drive.right_forward.value = speed
+      speed = max(AVG_SPEED, min(AVG_SPEED, LOW_SPEED - turn_factor))
+      drive.left_forward.value = speed
       isMoving = True
 
    elif (person[1] > center_y + 25): #if person is in the right side of the camera
-      speed = max(MIN_SPEED, min(MAX_SPEED, AVG_SPEED - turn_factor))
+      speed = max(MIN_SPEED, min(AVG_SPEED, LOW_SPEED - turn_factor))
       drive.left_forward.value = speed
-      speed = min(MAX_SPEED, max(MIN_SPEED, AVG_SPEED + turn_factor))
+      speed = min(AVG_SPEED, max(MIN_SPEED, LOW_SPEED + turn_factor))
       drive.right_forward.value = speed
       isMoving = True
    
@@ -59,7 +61,7 @@ while True:
         break
 
     height, width, _ = frame.shape
-    center = width//2
+    center = (width//2, height//2)
    
     # Preprocess frame for the model
     resized_frame = cv2.resize(frame, (320, 320))  # Resize image to 320x320
@@ -77,25 +79,26 @@ while True:
     for i in range(len(scores)):
 
         if classes[i] != 1:  #if no human detected, spin in circle
-        
+            drive.circle_around()        
         if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
             y_min, x_min, y_max, x_max = boxes[i]
             xA, yA = int(x_min * width), int(y_min * height)
             xB, yB = int(x_max * width), int(y_max * height)
 
             # Draw bounding box around detected person
-            cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
+   #         cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
 
             # Estimate distance
             perceived_height = xB - xA  # Height of the detected person in pixels
             print("Perceived height: ", perceived_height)
             if perceived_height > 0:
                 distance = calculate_distance(AVERAGE_HEIGHT, FOCAL_LENGTH, perceived_height)
-                cv2.putText(frame, f"Distance: {distance:.2f} cm", (xA, yA - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                print("DISTANCE: ", distance)
+               # cv2.putText(frame, f"Distance: {distance:.2f} cm", (xA, yA - 10),
+                #            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                
                 #Drive logic: Stop if near human, spin to look for human, follow based on human's coords in frame
-                follow(center, (((xB-xA)//2), ((yB-yA)//2)))                
+                follow(center, (((xB-xA)//2), ((yB-yA)//2)), 120)                
                 print("Person Center Coord: ", (((xB-xA)//2), ((yB-yA)//2)))
            
                 if (isMoving == False and distance >= MAX_DISTANCE):
@@ -103,7 +106,7 @@ while True:
                   drive.circle_around()
 
     # Show the resulting frame with detection and distance
-    cv2.imshow("Detection and Distance", frame)
+  #  cv2.imshow("Detection and Distance", frame)
 
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
