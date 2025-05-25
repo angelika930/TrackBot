@@ -24,9 +24,11 @@ def calculate_distance(known_height, focal_length, perceived_height):
     return (known_height * focal_length) / perceived_height
 
 def follow(center, person, distance):
+   global isMoving
+
    print(center)
-   center_y = center[1]
-   error = person[1] - center_y
+   center_x = center[0]
+   error = person[0] - center_x
    turn_factor = Kp * error
    
    if (distance <= MAX_DISTANCE): #stop robot, keep human safe
@@ -34,23 +36,23 @@ def follow(center, person, distance):
       isMoving = False
 
 
-   elif (person[1] <= center_y + 25) and (person[1] > center_y - 25): #drive forward if in middle of frame
+   elif (person[0] <= center_x + 25) and (person[0] > center_x - 25): #drive forward if in middle of frame
       drive.forward(LOW_SPEED)
       isMoving = True
   
-   elif (person[1] < center_y - 25): #if person is in the left side of the camera
-      speed = min(AVG_SPEED, max(MIN_SPEED, LOW_SPEED + turn_factor))
-      drive.right_forward.value = speed
-      speed = max(AVG_SPEED, min(AVG_SPEED, LOW_SPEED - turn_factor))
-      drive.left_forward.value = speed
-      isMoving = True
+   elif (person[0] < center_x - 25): #if person is in the left side of the camera
+        left_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
+        right_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
+        drive.left_forward.value = left_speed
+        drive.right_forward.value = right_speed
+        isMoving = True
 
-   elif (person[1] > center_y + 25): #if person is in the right side of the camera
-      speed = max(MIN_SPEED, min(AVG_SPEED, LOW_SPEED - turn_factor))
-      drive.left_forward.value = speed
-      speed = min(AVG_SPEED, max(MIN_SPEED, LOW_SPEED + turn_factor))
-      drive.right_forward.value = speed
-      isMoving = True
+   elif (person[0] > center_x + 25): #if person is in the right side of the camera
+        right_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
+        left_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
+        drive.left_forward.value = left_speed
+        drive.right_forward.value = right_speed
+        isMoving = True
    
 
 # Start webcam
