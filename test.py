@@ -10,14 +10,19 @@ FAST_SPEED = 0.7
 MAX_SPEED = 1.0
 MIN_SPEED = 0.0
 isMoving = True
-MAX_DISTANCE = 50
+isLeft = False
+
+left_speed = 0
+right_speed = 0
+
+MAX_DISTANCE = 100
 #Create drive instance
 drive = Drive()
 # Load lightweight SSD Mobilenet v2 model (320x320) from TF Hub
 detector = hub.load("https://tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_320x320/1")
 
 FOCAL_LENGTH = 750
-AVERAGE_HEIGHT = 22
+AVERAGE_HEIGHT = 25
 Kp = 0.2
 
 def calculate_distance(known_height, focal_length, perceived_height):
@@ -25,6 +30,9 @@ def calculate_distance(known_height, focal_length, perceived_height):
 
 def follow(center, person, distance):
    global isMoving
+   global isLeft
+   global left_speed
+   global right_speed
 
    print(center)
    center_x = center[0]
@@ -34,29 +42,36 @@ def follow(center, person, distance):
    if (distance <= MAX_DISTANCE): #stop robot, keep human safe
       drive.stop_motors()
       isMoving = False
+      print("Made it through first\n")
 
-
-   elif (person[0] <= center_x + 25) and (person[0] > center_x - 25): #drive forward if in middle of frame
+   elif (person[0] <= center_x + 50) and (person[0] > center_x - 50): #drive forward if in middle of frame
       drive.forward(LOW_SPEED)
       isMoving = True
+      print("Made it through 2nd\n")
   
-   elif (person[0] < center_x - 25): #if person is in the left side of the camera
+   elif (person[0] < center_x - 50): #if person is in the left side of the camera
         left_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
         right_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
-        drive.left_forward.value = left_speed
-        drive.right_forward.value = right_speed
+        drive.left_forward.value = 0.3
+        drive.right_forward.value = 0.3
         isMoving = True
+        isLeft = True
+        print("Made it through third\n")
 
-   elif (person[0] > center_x + 25): #if person is in the right side of the camera
+   elif (person[0] > center_x + 50): #if person is in the right side of the camera
         right_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
         left_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
         drive.left_forward.value = left_speed
         drive.right_forward.value = right_speed
         isMoving = True
+        print("Made it through fourth\n")
+   print("Made it through none\n") 
    
-
+   print("Turn Factor: ", turn_factor)
 # Start webcam
 cap = cv2.VideoCapture(0)
+
+personFound = False
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -68,7 +83,7 @@ while True:
     # Preprocess frame for the model
     resized_frame = cv2.resize(frame, (320, 320))  # Resize image to 320x320
     input_tensor = tf.convert_to_tensor([resized_frame], dtype=tf.uint8)  # Convert to uint8
-    #input_tensor = tf.image.convert_image_dtype(input_tensor, tf.uint8)  # Normalize to [0, 1]
+    input_tensor = tf.image.convert_image_dtype(input_tensor, tf.uint8)  # Normalize to [0, 1]
 
     # Run detection
     detections = detector(input_tensor)
@@ -80,9 +95,10 @@ while True:
     
     for i in range(len(scores)):
 
-        if classes[i] != 1:  #if no human detected, spin in circle
-            drive.circle_around()        
-        if scores[i] > 0.5 and classes[i] == 1:  # Class 1 = person in COCO dataset
+      #  if classes[i] != 1:  #if no human detected, spin in circle
+       #     drive.circle_around()        
+        if scores[i] > 0.7 and classes[i] == 1:  # Class 1 = person in COCO dataset
+            personFound = True
             y_min, x_min, y_max, x_max = boxes[i]
             xA, yA = int(x_min * width), int(y_min * height)
             xB, yB = int(x_max * width), int(y_max * height)
@@ -106,13 +122,22 @@ while True:
                 if (isMoving == False and distance >= MAX_DISTANCE):
                   isMoving = True
                   drive.circle_around()
+            break
+
+        else: personFound = False
 
     # Show the resulting frame with detection and distance
   #  cv2.imshow("Detection and Distance", frame)
-
+    if personFound == False:
+        drive.circle_around()
+    if isMoving == False:
+        drive.stop_motors()
+    if isLeft:
+        drive.forward(0.3)
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
+    print("Person Found: ", personFound)
+    print("isMoving: ", isMoving)
 cap.release()
 cv2.destroyAllWindows()
