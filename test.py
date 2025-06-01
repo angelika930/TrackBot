@@ -10,8 +10,7 @@ FAST_SPEED = 0.7
 MAX_SPEED = 1.0
 MIN_SPEED = 0.0
 isMoving = True
-isLeft = False
-
+turn_direction = "none"
 left_speed = 0
 right_speed = 0
 
@@ -52,18 +51,19 @@ def follow(center, person, distance):
    elif (person[0] < center_x - 50): #if person is in the left side of the camera
         left_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
         right_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
-        drive.left_forward.value = 0.3
-        drive.right_forward.value = 0.3
+        #drive.left_forward.value = left_speed
+        #drive.right_forward.value = right_speed
         isMoving = True
-        isLeft = True
+        turn_direction = "left"
         print("Made it through third\n")
 
    elif (person[0] > center_x + 50): #if person is in the right side of the camera
         right_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
         left_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
-        drive.left_forward.value = left_speed
-        drive.right_forward.value = right_speed
+        #drive.left_forward.value = left_speed
+        #drive.right_forward.value = right_speed
         isMoving = True
+        turn_direction = "right"
         print("Made it through fourth\n")
    print("Made it through none\n") 
    
@@ -119,6 +119,7 @@ while True:
                 follow(center, (((xB-xA)//2), ((yB-yA)//2)), 120)                
                 print("Person Center Coord: ", (((xB-xA)//2), ((yB-yA)//2)))
            
+                #if no human detected close by, circle around to find one
                 if (isMoving == False and distance >= MAX_DISTANCE):
                   isMoving = True
                   drive.circle_around()
@@ -132,8 +133,14 @@ while True:
         drive.circle_around()
     if isMoving == False:
         drive.stop_motors()
-    if isLeft:
-        drive.forward(0.3)
+    if turn_direction == "left":
+        print("Left speed: ", left_speed)
+        print("Right speed: ", right_speed)
+        drive.left_forward.value = left_speed
+        drive.right_forward.value = right_speed
+    elif turn_direction == "right":
+        drive.left_forward.value = left_speed
+        drive.right_forward.value = right_speed 
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
