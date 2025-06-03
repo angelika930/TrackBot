@@ -31,6 +31,7 @@ def follow(center, person, distance):
    global isMoving
    global left_speed
    global right_speed
+   global turn_direction
 
    print(center)
    center_x = center[0]
@@ -47,10 +48,10 @@ def follow(center, person, distance):
       isMoving = True
       turn_direction = "forward"
       print("Made it through 2nd\n")
-   """
+
    elif (person[0] < center_x - 50): #if person is in the left side of the camera
         left_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
-        right_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
+        right_speed = min(0.6, AVG_SPEED + abs(turn_factor))
         #drive.left_forward.value = left_speed
         #drive.right_forward.value = right_speed
         isMoving = True
@@ -59,14 +60,16 @@ def follow(center, person, distance):
 
    elif (person[0] > center_x + 50): #if person is in the right side of the camera
         right_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
-        left_speed = min(MAX_SPEED, AVG_SPEED + abs(turn_factor))
+        left_speed = min(0.6, AVG_SPEED + abs(turn_factor))
         #drive.left_forward.value = left_speed
         #drive.right_forward.value = right_speed
         isMoving = True
         turn_direction = "right"
         print("Made it through fourth\n")
+   print("Left Speed: ", left_speed)
+   print("right speed: ", right_speed)
    print("Made it through none\n") 
-   """
+   
    print("Turn Factor: ", turn_factor)
 # Start webcam
 cap = cv2.VideoCapture(0)
@@ -116,7 +119,7 @@ while True:
                 #            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                
                 #Drive logic: Stop if near human, spin to look for human, follow based on human's coords in frame
-                follow(center, (((xB+xA)//2), ((yB+yA)//2)), 120)                
+                follow(center, (((xB+xA)//2), ((yB+yA)//2)), distance)                
                 print("Person Center Coord: ", (((xB+xA)//2), ((yB+yA)//2)))
            
                 #if no human detected close by, circle around to find one
@@ -129,23 +132,29 @@ while True:
 
     # Show the resulting frame with detection and distance
   #  cv2.imshow("Detection and Distance", frame)
-    #if personFound == False:
-    #    drive.circle_around()
+    if personFound == False:
+        drive.circle_around()
     if isMoving == False:
         drive.stop_motors()
-    """
+   
+    if turn_direction == "forward":
+        drive.forward(LOW_SPEED)
+
     if turn_direction == "left":
         print("Left speed: ", left_speed)
         print("Right speed: ", right_speed)
         drive.left_forward.value = left_speed
         drive.right_forward.value = right_speed
+        turn_direction = "none"
     elif turn_direction == "right":
         drive.left_forward.value = left_speed
         drive.right_forward.value = right_speed 
+        turn_direction = "none"
     elif turn_direction == "forward":
-        drive.forward(LOW_SPEED)    
+        drive.forward(LOW_SPEED) 
+        turn_direction = "none"
     print("Turn Direction: ", turn_direction)
-    """
+    
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
