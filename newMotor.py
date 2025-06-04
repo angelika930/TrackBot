@@ -77,8 +77,11 @@ class Drive:
     def circle_around(self): #robot spins in a circle till it finds a human
       self.left_l_enable.on()
       self.left_r_enable.on()
+      self.right_l_enable.on()
+      self.right_r_enable.on()
       self.left_reverse.off()
       self.left_forward.value = LOW_SPEED
+      self.right_forward.value = 0.0
     
 """    
     # Main program
