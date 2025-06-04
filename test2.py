@@ -2,10 +2,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
-import time
 from newMotor import Drive
-
-
 
 LOW_SPEED = 0.3
 AVG_SPEED = 0.5
@@ -16,7 +13,6 @@ isMoving = True
 turn_direction = "none"
 left_speed = 0
 right_speed = 0
-foundFailed = 0
 
 MAX_DISTANCE = 150
 #Create drive instance
@@ -36,7 +32,6 @@ def follow(center, person, distance):
    global left_speed
    global right_speed
    global turn_direction
-   global foundFailed
 
    print(center)
    center_x = center[0]
@@ -55,8 +50,8 @@ def follow(center, person, distance):
       print("Made it through 2nd\n")
 
    elif (person[0] < center_x - 50): #if person is in the left side of the camera
-        left_speed = max(0.1, 0.2 - abs(turn_factor))
-        right_speed = min(0.2, 0.2 + abs(turn_factor))
+        left_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
+        right_speed = min(0.6, AVG_SPEED + abs(turn_factor))
         #drive.left_forward.value = left_speed
         #drive.right_forward.value = right_speed
         isMoving = True
@@ -64,8 +59,8 @@ def follow(center, person, distance):
         print("Made it through third\n")
 
    elif (person[0] > center_x + 50): #if person is in the right side of the camera
-        right_speed = max(0.1, 0.2 - abs(turn_factor))
-        left_speed = min(0.2, 0.2 + abs(turn_factor))
+        right_speed = max(LOW_SPEED, AVG_SPEED - abs(turn_factor))
+        left_speed = min(0.6, AVG_SPEED + abs(turn_factor))
         #drive.left_forward.value = left_speed
         #drive.right_forward.value = right_speed
         isMoving = True
@@ -128,7 +123,7 @@ while True:
                 print("Person Center Coord: ", (((xB+xA)//2), ((yB+yA)//2)))
            
                 #if no human detected close by, circle around to find one
-                if (isMoving == False and distance >=  MAX_DISTANCE):
+                if (isMoving == False and distance >= MAX_DISTANCE):
                   isMoving = True
                   drive.circle_around()
             break
@@ -138,14 +133,7 @@ while True:
     # Show the resulting frame with detection and distance
   #  cv2.imshow("Detection and Distance", frame)
     if personFound == False:
-        foundFailed += 1
-        if foundFailed >= 15:
-            drive.circle_around()
-            foundFailed = 0
-        isMoving = True
-        print("Im circling\n")
-    
-    #currently unreachable because of ending for loop condition above
+        drive.circle_around()
     if isMoving == False:
         drive.stop_motors()
    
@@ -166,7 +154,7 @@ while True:
         drive.forward(LOW_SPEED) 
         turn_direction = "none"
     print("Turn Direction: ", turn_direction)
-    print("foundFailed: ", foundFailed) 
+    
     # Break the loop if 'q' is pressed
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
